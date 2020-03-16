@@ -39,7 +39,7 @@ function App() {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" className={classes.title}>
-            App
+            Paint
           </Typography>
         </Toolbar>
       </AppBar>
