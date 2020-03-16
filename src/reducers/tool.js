@@ -2,7 +2,7 @@ import * as tools from 'models/tools'
 
 const defaultState = {
   current: 0,
-  catalogue: [...tools]
+  catalogue: { ...tools }
 }
 
 function toolReducer (state = { ...defaultState }, action) {
