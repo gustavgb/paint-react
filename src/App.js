@@ -1,9 +1,10 @@
 import React from 'react';
 import {
-  AppBar, Toolbar, IconButton, Typography, Button
+  AppBar, Toolbar, IconButton, Typography
 } from '@material-ui/core'
 import MenuIcon from '@material-ui/icons/Menu'
 import { makeStyles } from '@material-ui/styles'
+import Canvas from 'Canvas';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -21,7 +22,7 @@ function App() {
   const classes = useStyles()
   return (
     <div className={classes.root}>
-      <AppBar>
+      <AppBar position="static">
         <Toolbar>
           <IconButton edge="start" color="inherit" aria-label="menu" className={classes.menuButton}>
             <MenuIcon />
@@ -29,9 +30,9 @@ function App() {
           <Typography variant="h6" className={classes.title}>
             App
           </Typography>
-          <Button color="inherit">Login</Button>
         </Toolbar>
       </AppBar>
+      <Canvas />
     </div>
   );
 }
