@@ -1,12 +1,14 @@
-import * as tools from 'models/tools'
-
 const defaultState = {
-  current: 0,
-  catalogue: { ...tools }
+  current: null
 }
 
 function toolReducer (state = { ...defaultState }, action) {
   switch (action.type) {
+    case 'SELECT_TOOL':
+      return {
+        ...state,
+        current: action.payload.tool
+      }
     default:
       return state
   }

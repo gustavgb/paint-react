@@ -6,6 +6,7 @@ import MenuIcon from '@material-ui/icons/Menu'
 import { makeStyles } from '@material-ui/styles'
 import Canvas from 'Canvas';
 import Menu from 'Menu';
+import { useSelector } from 'react-redux';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -24,6 +25,7 @@ const useStyles = makeStyles(theme => ({
 
 function App() {
   const classes = useStyles()
+  const hasLayers = useSelector(state => state.canvas.layers.length > 0)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = useCallback(() => {
@@ -46,7 +48,9 @@ function App() {
           </Typography>
         </Toolbar>
       </AppBar>
-      <Canvas />
+      {hasLayers && (
+        <Canvas />
+      )}
     </div>
   );
 }

@@ -3,6 +3,8 @@ import { Layer } from 'models/layer'
 const defaultState = {
   currentLayer: -1,
   masterTimestamp: 0,
+  width: 0,
+  height: 0,
   layerOrder: '',
   layers: []
 }
@@ -24,6 +26,8 @@ function canvasReducer (state = { ...defaultState }, action) {
       return {
         ...state,
         currentLayer: 0,
+        width,
+        height,
         masterTimestamp: Date.now(),
         layers: [newLayer],
         layerOrder: newLayer.id

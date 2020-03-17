@@ -1,6 +1,8 @@
 import React, { Component } from 'react'
 import { makeStyles } from '@material-ui/styles'
 import { connect } from 'react-redux'
+import { PaintBrush } from 'models/tools'
+import { selectTool } from 'actions/tool'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -10,28 +12,45 @@ const useStyles = makeStyles(theme => ({
     justifyContent: 'center',
     flexGrow: 1
   },
-  canvas: {
-    border: '1px solid black'
+  canvasContainer: {
+    border: '1px solid black',
+    position: 'relative',
+    ['& > *']: {
+      position: 'absolute',
+      left: 0,
+      top: 0
+    }
   }
 }))
 
 const contexts = {}
 
+const Canvas = ({ layer, index }) => (
+  <canvas
+    width={layer.width}
+    height={layer.height}
+    ref={node => { if (node) contexts[layer.id] = node.getContext('2d') }}
+    style={{ position: index > 0 ? 'absolute' : 'static' }}
+  />
+)
+
 const CanvasRenderer = React.forwardRef((props, ref) => {
   const classes = useStyles()
-  const { layers } = props
+  const { layers, currentLayer, tempCanvas } = props
 
   return (
-    <div className={classes.root} ref={ref}>
-      {layers.map(layer => (
-        <canvas
-          key={layer.id}
-          width={layer.width}
-          height={layer.height}
-          className={classes.canvas}
-          ref={node => { if (node) contexts[layer.id] = node.getContext('2d') }}
-        />
-      ))}
+    <div className={classes.root}>
+      <div ref={ref} className={classes.canvasContainer}>
+        {layers
+          .filter((l, index) => index <= currentLayer)
+          .map((layer, index) => <Canvas key={layer.id} layer={layer} index={index} />)
+        }
+        {tempCanvas}
+        {layers
+          .filter((l, index) => index > currentLayer)
+          .map((layer, index) => <Canvas key={layer.id} layer={layer} index={index} />)
+        }
+      </div>
     </div>
   )
 })
@@ -45,6 +64,7 @@ class CanvasContainer extends Component {
     this._mouseUp = this.mouseUp.bind(this)
 
     this.element = React.createRef()
+    this.canvasEl = React.createRef()
   }
 
   componentDidMount () {
@@ -56,6 +76,11 @@ class CanvasContainer extends Component {
     }
 
     this.updateContexts()
+    if (this.canvasEl.current) {
+      this.props.selectTool(new PaintBrush(this.canvasEl.current.getContext('2d'), this.element.current))
+    } else {
+      throw new Error('No temp canvas rendered')
+    }
   }
 
   componentWillUnmount () {
@@ -68,13 +93,13 @@ class CanvasContainer extends Component {
   }
 
   componentDidUpdate (prevProps) {
-    if (prevProps.canvas.masterTimestamp < this.props.canvas.masterTimestamp) {
+    if (prevProps.masterTimestamp < this.props.masterTimestamp) {
       this.updateContexts(prevProps)
     }
   }
 
   updateContexts (prevProps) {
-    this.props.canvas.layers.forEach(layer => {
+    this.props.layers.forEach(layer => {
       const ctx = contexts[layer.id]
 
       if (!prevProps) {
@@ -89,23 +114,48 @@ class CanvasContainer extends Component {
     })
   }
 
-  mouseDown () {
-
+  mouseDown (e) {
+    const { tool } = this.props
+    if (tool && typeof tool.mouseDown === 'function') {
+      tool.mouseDown(e)
+    }
   }
 
-  mouseMove () {
-
+  mouseMove (e) {
+    const { tool } = this.props
+    if (tool && typeof tool.mouseMove === 'function') {
+      tool.mouseMove(e)
+    }
   }
 
-  mouseUp () {
-
+  mouseUp (e) {
+    const { tool } = this.props
+    if (tool && typeof tool.mouseUp === 'function') {
+      tool.mouseUp(e)
+    }
   }
 
   render () {
+    const {
+      layers,
+      width,
+      height,
+      currentLayer
+    } = this.props
+
     return (
       <CanvasRenderer
-        layers={this.props.canvas.layers}
         ref={this.element}
+        layers={layers}
+        currentLayer={currentLayer}
+        tempCanvas={(
+          <canvas
+            width={width}
+            height={height}
+            key="tempcanvas"
+            ref={this.canvasEl}
+          />
+        )}
       />
     )
   }
@@ -113,6 +163,14 @@ class CanvasContainer extends Component {
 
 export default connect(
   state => ({
-    canvas: state.canvas
+    layers: state.canvas.layers,
+    width: state.canvas.width,
+    height: state.canvas.height,
+    masterTimestamp: state.canvas.masterTimestamp,
+    currentLayer: state.canvas.currentLayer,
+    tool: state.tool.current
+  }),
+  dispatch => ({
+    selectTool: (toolInstance) => dispatch(selectTool(toolInstance))
   })
 )(CanvasContainer)
