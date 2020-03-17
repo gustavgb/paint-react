@@ -29,8 +29,17 @@ function canvasReducer (state = { ...defaultState }, action) {
         width,
         height,
         masterTimestamp: Date.now(),
-        layers: [newLayer],
-        layerOrder: newLayer.id
+        layers: [newLayer]
+      }
+    }
+    case 'COMMIT_CHANGE': {
+      const { change, layerIndex } = action.payload
+
+      state.layers[layerIndex].change(change)
+
+      return {
+        ...state,
+        masterTimestamp: Date.now()
       }
     }
     default:

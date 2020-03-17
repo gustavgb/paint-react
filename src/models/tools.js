@@ -1,3 +1,6 @@
+import { commitChange } from 'actions/canvas'
+import store from 'store'
+
 export class Tool {
   constructor (name) {
     this.name = name
@@ -10,6 +13,11 @@ export class PaintBrush extends Tool {
 
     this.ctx = ctx
     this.element = element
+
+    this.transportCanvas = document.createElement('canvas')
+    this.transportCanvas.width = this.ctx.canvas.width
+    this.transportCanvas.height = this.ctx.canvas.height
+    this.transportCtx = this.transportCanvas.getContext('2d')
 
     this.state = {
       x: 0,
@@ -49,6 +57,8 @@ export class PaintBrush extends Tool {
       this.state.active = false
 
       this.stroke(this.state.lastX, this.state.lastY, this.state.x, this.state.y)
+
+      this.commit()
     }
   }
 
@@ -70,5 +80,12 @@ export class PaintBrush extends Tool {
     ctx.arc(x, y, 5, 0, 2*Math.PI, false)
     ctx.fillStyle = 'black'
     ctx.fill()
+  }
+
+  commit () {
+    this.transportCtx.clearRect(0, 0, this.transportCanvas.width, this.transportCanvas.height)
+    this.transportCtx.drawImage(this.ctx.canvas, 0, 0)
+    store.dispatch(commitChange(this.transportCanvas))
+    this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height)
   }
 }

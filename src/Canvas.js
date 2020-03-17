@@ -15,7 +15,7 @@ const useStyles = makeStyles(theme => ({
   canvasContainer: {
     border: '1px solid black',
     position: 'relative',
-    ['& > *']: {
+    '& > *': {
       position: 'absolute',
       left: 0,
       top: 0
@@ -77,7 +77,12 @@ class CanvasContainer extends Component {
 
     this.updateContexts()
     if (this.canvasEl.current) {
-      this.props.selectTool(new PaintBrush(this.canvasEl.current.getContext('2d'), this.element.current))
+      this.props.selectTool(
+        new PaintBrush(
+          this.canvasEl.current.getContext('2d'),
+          this.element.current
+        )
+      )
     } else {
       throw new Error('No temp canvas rendered')
     }
@@ -105,9 +110,11 @@ class CanvasContainer extends Component {
       if (!prevProps) {
         ctx.drawImage(layer.canvas, 0, 0)
       } else {
-        const lastLayer = prevProps.canvas.layers.find(l => l.id === layer.id)
+        console.log(prevProps)
+        const lastLayer = prevProps.layers.find(l => l.id === layer.id)
 
-        if (!lastLayer || lastLayer.timestamp < layer.timestamp) {
+        if (!lastLayer || lastLayer.timestamp < layer.timestamp || true) {
+          console.log('update')
           ctx.drawImage(layer.canvas, 0, 0)
         }
       }
