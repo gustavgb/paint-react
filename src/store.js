@@ -1,13 +1,16 @@
-import { createStore, combineReducers, applyMiddleware } from 'redux'
-import layersReducer from 'reducers/layers'
+import { createStore, combineReducers, applyMiddleware, compose } from 'redux'
 import toolReducer from 'reducers/tool'
 import thunk from 'redux-thunk'
+import canvasReducer from 'reducers/canvas'
 
 const reducer = combineReducers({
-  layers: layersReducer,
+  canvas: canvasReducer,
   tool: toolReducer,
 })
 
-const store = createStore(reducer, applyMiddleware(thunk))
+const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
+const store = window.store = createStore(reducer, /* preloadedState, */ composeEnhancers(
+  applyMiddleware(thunk)
+))
 
 export default store

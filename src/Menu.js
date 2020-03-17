@@ -13,6 +13,10 @@ import {
 } from '@material-ui/core'
 import NoteAddIcon from '@material-ui/icons/NoteAddOutlined'
 import CrossIcon from '@material-ui/icons/Close'
+import {
+  newImage
+} from 'actions/canvas'
+import { useDispatch } from 'react-redux'
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -39,9 +43,16 @@ const useStyles = makeStyles(theme => ({
 
 const Menu = ({ open, onClose }) => {
   const classes = useStyles()
+  const dispatch = useDispatch()
+
   const onClickPaper = useCallback((e) => {
     e.stopPropagation()
   }, [])
+
+  const onNewImage = useCallback(() => {
+    dispatch(newImage(600, 400))
+    onClose()
+  }, [dispatch, onClose])
 
   return (
     <Backdrop className={classes.backdrop} open={open} onClick={onClose}>
@@ -53,7 +64,7 @@ const Menu = ({ open, onClose }) => {
             </IconButton>
           </div>
           <List component="nav" aria-label="menu">
-            <ListItem button>
+            <ListItem button onClick={onNewImage}>
               <ListItemIcon>
                 <NoteAddIcon />
               </ListItemIcon>
