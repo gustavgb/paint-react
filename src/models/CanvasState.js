@@ -31,6 +31,7 @@ export class CanvasState {
   }
 
   declareLayers (layers) {
+    this.layers = this.layers.filter(layer => layers.find(l => l.id === layer.id))
     const missing = layers.filter(layer => !this.layers.find(l => l.id === layer.id))
 
     missing.forEach(missingLayer => {

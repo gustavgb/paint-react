@@ -34,6 +34,12 @@ const styles = {
   }
 }
 
+function joinIds (array) {
+  return array
+    .map(obj => obj.id)
+    .join('')
+}
+
 class Canvas extends Component {
   constructor (props) {
     super(props)
@@ -88,9 +94,7 @@ class Canvas extends Component {
 
   componentDidUpdate (prevProps) {
     if (prevProps.masterTimestamp < this.props.masterTimestamp) {
-      state.renderToCanvas(this.canvasCtx)
-
-      if (prevProps.layers.length !== this.props.layers.length) {
+      if (joinIds(prevProps.layers) !== joinIds(this.props.layers)) {
         state.declareLayers(this.props.layers)
       }
       if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
@@ -99,6 +103,8 @@ class Canvas extends Component {
       if (prevProps.currentLayer !== this.props.currentLayer) {
         state.setCurrentLayer(this.props.currentLayer)
       }
+
+      state.renderToCanvas(this.canvasCtx)
     }
   }
 
