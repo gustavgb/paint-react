@@ -12,8 +12,6 @@ export class Layer {
     this.ctx.fillRect(0, 0, width, height)
 
     this.transportCanvas = document.createElement('canvas')
-    this.transportCanvas.width = width
-    this.transportCanvas.height = height
     this.transportCtx = this.transportCanvas.getContext('2d')
   }
 

@@ -7,7 +7,7 @@ import { updateTimestamp } from 'actions/canvas'
 import { CanvasState } from 'models/CanvasState'
 import enhance from 'utils/enhance'
 
-const state = new CanvasState()
+const state = window.state = new CanvasState()
 
 const styles = {
   root: {
@@ -128,7 +128,7 @@ class Canvas extends Component {
 
   actionCommit () {
     state.commit(
-      this.canvasCtx.canvas,
+      this.tempCtx.canvas,
       () => {
         this.tempCtx.clearRect(
           0, 0,
