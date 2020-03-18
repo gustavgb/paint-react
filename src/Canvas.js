@@ -18,12 +18,15 @@ const styles = {
     flexGrow: 1
   },
   canvasContainer: {
-    border: '1px solid black',
+    boxShadow: '0 0 10px 0px #454543',
     position: 'relative',
+    width: props => props.width,
+    height: props => props.height,
     '& > *': {
       position: 'absolute',
       left: 0,
       top: 0,
+      pointerEvents: 'none',
       '&:first-child': {
         position: 'static'
       }
@@ -41,7 +44,8 @@ class Canvas extends Component {
 
     this.canvasCtx = null
     this.tempCtx = null
-    this.element = React.createRef()
+    this.sizeElement = null
+    this.eventElement = React.createRef()
 
     this.rect = {x: 0, y: 0}
 
@@ -51,7 +55,7 @@ class Canvas extends Component {
   }
 
   componentDidMount () {
-    const node = this.element.current
+    const node = this.eventElement.current
     if (node) {
       node.addEventListener('mousedown', this._mouseDown)
       node.addEventListener('mousemove', this._mouseMove)
@@ -74,7 +78,7 @@ class Canvas extends Component {
   }
 
   componentWillUnmount () {
-    const node = this.element.current
+    const node = this.eventElement.current
     if (node) {
       node.removeEventListener('mousedown', this._mouseDown)
       node.removeEventListener('mousemove', this._mouseMove)
@@ -101,7 +105,7 @@ class Canvas extends Component {
   mouseDown (e) {
     const { tool } = this.props
     if (tool && typeof tool.mouseDown === 'function') {
-      this.rect = this.element.current.getBoundingClientRect()
+      this.rect = this.sizeElement.getBoundingClientRect()
       const x = e.clientX - this.rect.x
       const y = e.clientY - this.rect.y
       tool.mouseDown(x, y, this.tempCtx, this.actions)
@@ -142,12 +146,12 @@ class Canvas extends Component {
   render () {
     const { classes, width, height } = this.props
     return (
-      <div className={classes.root}>
-        <div className={classes.canvasContainer} ref={this.element}>
+      <div className={classes.root} ref={this.eventElement}>
+        <div className={classes.canvasContainer}>
           <canvas
             width={width}
             height={height}
-            ref={node => { if (node) this.canvasCtx = node.getContext('2d') }}
+            ref={node => { if (node) this.canvasCtx = node.getContext('2d'); this.sizeElement = node }}
           />
           <canvas
             width={width}
@@ -161,6 +165,7 @@ class Canvas extends Component {
 }
 
 export default enhance(
+  withStyles(styles),
   connect(
     state => ({
       layers: state.canvas.layers,
@@ -174,6 +179,5 @@ export default enhance(
       selectTool: (toolInstance) => dispatch(selectTool(toolInstance)),
       updateTimestamp: () => dispatch(updateTimestamp())
     })
-  ),
-  withStyles(styles)
+  )
 )(Canvas)

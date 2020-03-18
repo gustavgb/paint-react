@@ -13,7 +13,8 @@ const useStyles = makeStyles(theme => ({
     display: 'flex',
     flexDirection: 'column',
     height: '100vh',
-    width: '100vw'
+    width: '100vw',
+    backgroundColor: '#dfdfdd'
   },
   menuButton: {
     marginRight: theme.spacing(2)
