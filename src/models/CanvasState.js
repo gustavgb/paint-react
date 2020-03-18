@@ -1,22 +1,22 @@
-import Layer from 'models/Layer'
+import { Layer } from 'models/Layer'
 
 export class CanvasState {
-  constructor (width, height, currentLayer = 0) {
+  constructor (width = 0, height = 0, currentLayer = 0) {
     this.layers = []
     this.width = width
     this.height = height
     this.currentLayer = currentLayer
 
     this.transportCanvas = document.createElement('canvas')
-    this.transportCanvas.width = this.ctx.canvas.width
-    this.transportCanvas.height = this.ctx.canvas.height
+    this.transportCanvas.width = width
+    this.transportCanvas.height = height
     this.transportCtx = this.transportCanvas.getContext('2d')
   }
 
-  static renderCanvas (ctx) {
+  renderToCanvas (ctx) {
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     this.layers.forEach(layer => {
-      ctx.drawImage(layer, 0, 0)
+      ctx.drawImage(layer.canvas, 0, 0)
     })
   }
 
@@ -24,10 +24,14 @@ export class CanvasState {
     this.currentLayer = currentLayer
   }
 
+  setDimensions (width, height) {
+    this.layers.forEach(layer => layer.resize(width, height))
+    this.width = this.transportCanvas.width = width
+    this.height = this.transportCanvas.height = height
+  }
+
   declareLayers (layers) {
     const missing = layers.filter(layer => !this.layers.find(l => l.id === layer.id))
-
-    console.log(missing)
 
     missing.forEach(missingLayer => {
       const newLayer = new Layer(this.width, this.height, missingLayer.id)
@@ -37,11 +41,11 @@ export class CanvasState {
   }
 
   commit (canvas, callback) {
-    this.transportCtx.clearRect(0, 0, this.transportCanvas.width, this.transportCanvas.height)
+    this.transportCanvas.width = this.width
+    this.transportCanvas.height = this.height
     this.transportCtx.drawImage(canvas, 0, 0)
 
     this.layers[this.currentLayer].change(this.transportCanvas)
-
 
     if (typeof callback === 'function') {
       callback()

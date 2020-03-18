@@ -58,12 +58,19 @@ class Canvas extends Component {
       node.addEventListener('mouseup', this._mouseUp)
     }
 
-    CanvasState.renderCanvas(this.canvasCtx)
-    if (this.canvasEl.current) {
-      this.props.selectTool(new PaintBrush())
-    } else {
-      throw new Error('No temp canvas rendered')
-    }
+    const {
+      width,
+      height,
+      currentLayer,
+      layers
+    } = this.props
+
+    state.setCurrentLayer(currentLayer)
+    state.setDimensions(width, height)
+    state.declareLayers(layers)
+
+    state.renderToCanvas(this.canvasCtx)
+    this.props.selectTool(new PaintBrush())
   }
 
   componentWillUnmount () {
@@ -77,10 +84,16 @@ class Canvas extends Component {
 
   componentDidUpdate (prevProps) {
     if (prevProps.masterTimestamp < this.props.masterTimestamp) {
-      CanvasState.renderCanvas(this.canvasCtx)
+      state.renderToCanvas(this.canvasCtx)
 
       if (prevProps.layers.length !== this.props.layers.length) {
-        state.declareLayers(this.state.layers)
+        state.declareLayers(this.props.layers)
+      }
+      if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
+        state.setDimensions(this.props.width, this.props.height)
+      }
+      if (prevProps.currentLayer !== this.props.currentLayer) {
+        state.setCurrentLayer(this.props.currentLayer)
       }
     }
   }
@@ -88,7 +101,7 @@ class Canvas extends Component {
   mouseDown (e) {
     const { tool } = this.props
     if (tool && typeof tool.mouseDown === 'function') {
-      this.rect = this.element.getBoundingClientRect()
+      this.rect = this.element.current.getBoundingClientRect()
       const x = e.clientX - this.rect.x
       const y = e.clientY - this.rect.y
       tool.mouseDown(x, y, this.tempCtx, this.actions)
@@ -115,13 +128,13 @@ class Canvas extends Component {
 
   actionCommit () {
     state.commit(
-      this.canvasEl,
+      this.canvasCtx.canvas,
       () => {
-        this.props.updateTimestamp()
         this.tempCtx.clearRect(
           0, 0,
           this.tempCtx.canvas.width, this.tempCtx.canvas.height
         )
+        this.props.updateTimestamp()
       }
     )
   }
@@ -134,12 +147,12 @@ class Canvas extends Component {
           <canvas
             width={width}
             height={height}
-            ref={node => { this.canvasCtx = node.getContext('2d') }}
+            ref={node => { if (node) this.canvasCtx = node.getContext('2d') }}
           />
           <canvas
             width={width}
             height={height}
-            ref={node => { this.tempCtx = node.getContext('2d') }}
+            ref={node => { if (node) this.tempCtx = node.getContext('2d') }}
           />
         </div>
       </div>
@@ -154,7 +167,8 @@ export default enhance(
       width: state.canvas.width,
       height: state.canvas.height,
       masterTimestamp: state.canvas.masterTimestamp,
-      tool: state.tool.current
+      tool: state.tool.current,
+      currentLayer: state.canvas.currentLayer
     }),
     dispatch => ({
       selectTool: (toolInstance) => dispatch(selectTool(toolInstance)),
