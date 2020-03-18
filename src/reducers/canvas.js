@@ -1,42 +1,33 @@
-import { Layer } from 'models/layer'
+import { v4 as uuid } from 'uuid'
 
 const defaultState = {
   currentLayer: -1,
   masterTimestamp: 0,
   width: 0,
   height: 0,
-  layerOrder: '',
   layers: []
 }
 
-// const sortByIndex = (a, b) => {
-//   if (a.index < b.index) {
-//     return -1
-//   } else if (a.index > b.index) {
-//     return 1
-//   }
-//   return 0
-// }
+function createLayer () {
+  return {
+    id: uuid()
+  }
+}
 
 function canvasReducer (state = { ...defaultState }, action) {
   switch (action.type) {
     case 'NEW_IMAGE': {
       const { width, height } = action.payload
-      const newLayer = new Layer(width, height, 0)
       return {
         ...state,
         currentLayer: 0,
         width,
         height,
         masterTimestamp: Date.now(),
-        layers: [newLayer]
+        layers: [createLayer()]
       }
     }
-    case 'COMMIT_CHANGE': {
-      const { change, layerIndex } = action.payload
-
-      state.layers[layerIndex].change(change)
-
+    case 'UPDATE_TIMESTAMP': {
       return {
         ...state,
         masterTimestamp: Date.now()

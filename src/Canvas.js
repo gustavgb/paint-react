@@ -1,10 +1,15 @@
 import React, { Component } from 'react'
-import { makeStyles } from '@material-ui/styles'
+import { withStyles } from '@material-ui/styles'
 import { connect } from 'react-redux'
-import { PaintBrush } from 'models/tools'
+import PaintBrush from 'tools/PaintBrush'
 import { selectTool } from 'actions/tool'
+import { updateTimestamp } from 'actions/canvas'
+import { CanvasState } from 'models/CanvasState'
+import enhance from 'utils/enhance'
 
-const useStyles = makeStyles(theme => ({
+const state = new CanvasState()
+
+const styles = {
   root: {
     display: 'flex',
     flexDirection: 'row',
@@ -18,44 +23,15 @@ const useStyles = makeStyles(theme => ({
     '& > *': {
       position: 'absolute',
       left: 0,
-      top: 0
+      top: 0,
+      '&:first-child': {
+        position: 'static'
+      }
     }
   }
-}))
+}
 
-const contexts = {}
-
-const Canvas = ({ layer, index }) => (
-  <canvas
-    width={layer.width}
-    height={layer.height}
-    ref={node => { if (node) contexts[layer.id] = node.getContext('2d') }}
-    style={{ position: index > 0 ? 'absolute' : 'static' }}
-  />
-)
-
-const CanvasRenderer = React.forwardRef((props, ref) => {
-  const classes = useStyles()
-  const { layers, currentLayer, tempCanvas } = props
-
-  return (
-    <div className={classes.root}>
-      <div ref={ref} className={classes.canvasContainer}>
-        {layers
-          .filter((l, index) => index <= currentLayer)
-          .map((layer, index) => <Canvas key={layer.id} layer={layer} index={index} />)
-        }
-        {tempCanvas}
-        {layers
-          .filter((l, index) => index > currentLayer)
-          .map((layer, index) => <Canvas key={layer.id} layer={layer} index={index} />)
-        }
-      </div>
-    </div>
-  )
-})
-
-class CanvasContainer extends Component {
+class Canvas extends Component {
   constructor (props) {
     super(props)
 
@@ -63,8 +39,15 @@ class CanvasContainer extends Component {
     this._mouseMove = this.mouseMove.bind(this)
     this._mouseUp = this.mouseUp.bind(this)
 
+    this.canvasCtx = null
+    this.tempCtx = null
     this.element = React.createRef()
-    this.canvasEl = React.createRef()
+
+    this.rect = {x: 0, y: 0}
+
+    this.actions = {
+      commit: this.actionCommit.bind(this)
+    }
   }
 
   componentDidMount () {
@@ -75,14 +58,9 @@ class CanvasContainer extends Component {
       node.addEventListener('mouseup', this._mouseUp)
     }
 
-    this.updateContexts()
+    CanvasState.renderCanvas(this.canvasCtx)
     if (this.canvasEl.current) {
-      this.props.selectTool(
-        new PaintBrush(
-          this.canvasEl.current.getContext('2d'),
-          this.element.current
-        )
-      )
+      this.props.selectTool(new PaintBrush())
     } else {
       throw new Error('No temp canvas rendered')
     }
@@ -99,85 +77,89 @@ class CanvasContainer extends Component {
 
   componentDidUpdate (prevProps) {
     if (prevProps.masterTimestamp < this.props.masterTimestamp) {
-      this.updateContexts(prevProps)
-    }
-  }
+      CanvasState.renderCanvas(this.canvasCtx)
 
-  updateContexts (prevProps) {
-    this.props.layers.forEach(layer => {
-      const ctx = contexts[layer.id]
-
-      if (!prevProps) {
-        ctx.drawImage(layer.canvas, 0, 0)
-      } else {
-        console.log(prevProps)
-        const lastLayer = prevProps.layers.find(l => l.id === layer.id)
-
-        if (!lastLayer || lastLayer.timestamp < layer.timestamp || true) {
-          console.log('update')
-          ctx.drawImage(layer.canvas, 0, 0)
-        }
+      if (prevProps.layers.length !== this.props.layers.length) {
+        state.declareLayers(this.state.layers)
       }
-    })
+    }
   }
 
   mouseDown (e) {
     const { tool } = this.props
     if (tool && typeof tool.mouseDown === 'function') {
-      tool.mouseDown(e)
+      this.rect = this.element.getBoundingClientRect()
+      const x = e.clientX - this.rect.x
+      const y = e.clientY - this.rect.y
+      tool.mouseDown(x, y, this.tempCtx, this.actions)
     }
   }
 
   mouseMove (e) {
     const { tool } = this.props
     if (tool && typeof tool.mouseMove === 'function') {
-      tool.mouseMove(e)
+      const x = e.clientX - this.rect.x
+      const y = e.clientY - this.rect.y
+      tool.mouseMove(x, y, this.tempCtx, this.actions)
     }
   }
 
   mouseUp (e) {
     const { tool } = this.props
     if (tool && typeof tool.mouseUp === 'function') {
-      tool.mouseUp(e)
+      const x = e.clientX - this.rect.x
+      const y = e.clientY - this.rect.y
+      tool.mouseUp(x, y, this.tempCtx, this.actions)
     }
   }
 
-  render () {
-    const {
-      layers,
-      width,
-      height,
-      currentLayer
-    } = this.props
+  actionCommit () {
+    state.commit(
+      this.canvasEl,
+      () => {
+        this.props.updateTimestamp()
+        this.tempCtx.clearRect(
+          0, 0,
+          this.tempCtx.canvas.width, this.tempCtx.canvas.height
+        )
+      }
+    )
+  }
 
+  render () {
+    const { classes, width, height } = this.props
     return (
-      <CanvasRenderer
-        ref={this.element}
-        layers={layers}
-        currentLayer={currentLayer}
-        tempCanvas={(
+      <div className={classes.root}>
+        <div className={classes.canvasContainer} ref={this.element}>
           <canvas
             width={width}
             height={height}
-            key="tempcanvas"
-            ref={this.canvasEl}
+            ref={node => { this.canvasCtx = node.getContext('2d') }}
           />
-        )}
-      />
+          <canvas
+            width={width}
+            height={height}
+            ref={node => { this.tempCtx = node.getContext('2d') }}
+          />
+        </div>
+      </div>
     )
   }
 }
 
-export default connect(
-  state => ({
-    layers: state.canvas.layers,
-    width: state.canvas.width,
-    height: state.canvas.height,
-    masterTimestamp: state.canvas.masterTimestamp,
-    currentLayer: state.canvas.currentLayer,
-    tool: state.tool.current
-  }),
-  dispatch => ({
-    selectTool: (toolInstance) => dispatch(selectTool(toolInstance))
-  })
-)(CanvasContainer)
+export default enhance(
+  connect(
+    state => ({
+      layers: state.canvas.layers,
+      width: state.canvas.width,
+      height: state.canvas.height,
+      masterTimestamp: state.canvas.masterTimestamp,
+      tool: state.tool.current
+    }),
+    dispatch => ({
+      selectTool: (toolInstance) => dispatch(selectTool(toolInstance)),
+      updateTimestamp: () => dispatch(updateTimestamp())
+    })
+  ),
+  withStyles(styles)
+)(Canvas)
