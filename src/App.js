@@ -7,6 +7,7 @@ import { makeStyles } from '@material-ui/styles'
 import Canvas from 'Canvas';
 import Menu from 'Menu';
 import { useSelector } from 'react-redux';
+import ColorPicker from 'ColorPicker';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -47,6 +48,7 @@ function App() {
           <Typography variant="h6" className={classes.title}>
             Paint
           </Typography>
+          <ColorPicker />
         </Toolbar>
       </AppBar>
       {hasLayers && (
